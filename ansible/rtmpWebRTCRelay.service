@@ -1,0 +1,12 @@
+[Unit]
+Description=RtmpWebRTCRelay Service
+
+[Service]
+User=stefan
+Group=stefan
+ExecStart=/home/stefan/server/rtmpWebRTCRelay
+WorkingDirectory=/home/stefan/server
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

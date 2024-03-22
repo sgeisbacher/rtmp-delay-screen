@@ -1,0 +1,26 @@
+- name: deploy service
+  hosts: machines
+  tasks:
+    # - name: upload server-files
+    #   ansible.builtin.copy:
+    #     src: "dist/{{ item }}"
+    #     dest: /home/stefan/server/
+    #   loop:
+    #     - index.html
+    - name: deploy server
+      ansible.builtin.copy:
+        src: dist/rtmpWebRTCRelay
+        dest: /home/stefan/server/
+        mode: 0755
+      notify: service-restarted
+    - name: service-started
+      ansible.builtin.systemd_service:
+        name: rtmpWebRTCRelay.service
+        state: started
+      become: true
+  handlers:
+    - name: service-restarted
+      ansible.builtin.systemd_service:
+        name: rtmpWebRTCRelay.service
+        state: restarted
+      become: true

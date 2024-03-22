@@ -1,0 +1,72 @@
+- name: setup machines
+  hosts: machines
+  tasks:
+    - name: system packages installed
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+      become: true
+      loop:
+        - tree
+        - vim
+        - htop
+        - lsof
+    - name: xserver packages installed
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+      become: true
+      loop:
+        - xserver-xorg
+        - xinit
+        - x11-xserver-utils
+        - xterm
+    - name: browser packages installed
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+      become: true
+      loop:
+        - chromium-browser
+        - unclutter # hides the mouse cursor
+    - name: fix sshd-config
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        state: absent
+        regexp: "^AcceptEnv LANG"
+      become: true
+    - name: setup project dir
+      ansible.builtin.file:
+        path: /home/stefan/server
+        state: directory
+        mode: "0755"
+    - name: install relay service
+      ansible.builtin.copy:
+        src: rtmpWebRTCRelay.service
+        dest: /etc/systemd/system
+        owner: root
+        group: root
+      become: true
+      notify: systemd-reloaded
+    - name: install bash_profile
+      ansible.builtin.copy:
+        src: bash_profile
+        dest: /home/stefan/.bash_profile
+        owner: stefan
+        group: stefan
+    - name: install xinitrc
+      ansible.builtin.copy:
+        src: xinitrc
+        dest: /home/stefan/.xinitrc
+        owner: stefan
+        group: stefan
+    - name: relay-service-enabled
+      ansible.builtin.systemd_service:
+        name: rtmpWebRTCRelay.service
+        enabled: true
+      become: true
+  handlers:
+    - name: systemd-reloaded
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+      become: true

@@ -1,0 +1,2 @@
+[machines]
+192.168.8.132   ansible_user=stefan
