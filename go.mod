@@ -1,4 +1,4 @@
-module github.com/sgeisbacher/go-rtmp-delay
+module github.com/sgeisbacher/go-rtmp-screen
 
 go 1.22.0
 

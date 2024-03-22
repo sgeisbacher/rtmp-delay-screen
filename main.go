@@ -7,7 +7,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/pion/webrtc/v3"
-	"github.com/sgeisbacher/go-rtmp-delay/ui"
+	"github.com/sgeisbacher/go-rtmp-screen/ui"
 )
 
 func main() {
