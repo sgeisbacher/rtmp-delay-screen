@@ -2,6 +2,7 @@ setup:
 	ansible-playbook -i ansible/hosts ansible/setup.yml
 
 build:
+	templ generate
 	GOOS=linux GOARCH=arm GOARM=5 go build -o rtmpScreenServer
 
 deploy: build

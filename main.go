@@ -13,6 +13,7 @@ import (
 
 func main() {
 	http.Handle("/", templ.Handler(ui.PlayerLayout()))
+	http.Handle("/admin", templ.Handler(ui.AdminLayout()))
 	http.HandleFunc("/createPeerConnection", createPeerConnection)
 
 	fmt.Println("Listening on :8080")
