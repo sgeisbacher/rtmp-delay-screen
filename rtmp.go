@@ -70,6 +70,7 @@ func (h *Handler) OnCreateStream(timestamp uint32, cmd *rtmpmsg.NetConnectionCre
 
 func (h *Handler) OnPublish(timestamp uint32, cmd *rtmpmsg.NetStreamPublish) error {
 	log.Printf("OnPublish: %#v", cmd)
+	ringBuffer = createRingBuffer(30)
 
 	if cmd.PublishingName == "" {
 		return errors.New("PublishingName is empty")
@@ -95,6 +96,8 @@ func (h *Handler) OnAudio(timestamp uint32, payload io.Reader) error {
 }
 
 const headerLengthField = 4
+
+var ringBuffer RingBuffer
 
 func (h *Handler) OnVideo(timestamp uint32, payload io.Reader) error {
 	var video flvtag.VideoData
@@ -122,8 +125,13 @@ func (h *Handler) OnVideo(timestamp uint32, payload io.Reader) error {
 		offset += int(bufferLength)
 	}
 
+	ringBuffer.Write(outBuf)
+	out, dataAvail := ringBuffer.Read()
+	if !dataAvail {
+		return nil
+	}
 	return h.videoTrack.WriteSample(media.Sample{
-		Data:     outBuf,
+		Data:     out,
 		Duration: time.Second / 30,
 	})
 }
