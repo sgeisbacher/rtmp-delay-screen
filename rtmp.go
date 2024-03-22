@@ -19,7 +19,7 @@ import (
 func startRTMPServer(peerConnection *webrtc.PeerConnection, videoTrack, audioTrack *webrtc.TrackLocalStaticSample) {
 	log.Println("Starting RTMP Server")
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp", ":1935")
+	tcpAddr, err := net.ResolveTCPAddr("tcp", "localhost:1935")
 	if err != nil {
 		log.Panicf("Failed: %+v", err)
 	}
@@ -68,7 +68,7 @@ func (h *Handler) OnCreateStream(timestamp uint32, cmd *rtmpmsg.NetConnectionCre
 	return nil
 }
 
-func (h *Handler) OnPublish(timestamp uint32, cmd *rtmpmsg.NetStreamPublish) error {
+func (h *Handler) OnPublish(ctx *rtmp.StreamContext, timestamp uint32, cmd *rtmpmsg.NetStreamPublish) error {
 	log.Printf("OnPublish: %#v", cmd)
 	ringBuffer = createRingBuffer(30)
 

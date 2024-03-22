@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/a-h/templ"
@@ -15,7 +16,10 @@ func main() {
 	http.HandleFunc("/createPeerConnection", createPeerConnection)
 
 	fmt.Println("Listening on :8080")
-	http.ListenAndServe("localhost:8080", nil)
+	err := http.ListenAndServe("localhost:8080", nil)
+	if err != nil {
+		log.Fatalf("unknown error: %v\n", err)
+	}
 }
 
 // Add a single video track

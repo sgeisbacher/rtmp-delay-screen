@@ -2,7 +2,7 @@ setup:
 	ansible-playbook -i ansible/hosts ansible/setup.yml
 
 build:
-	GOOS=linux GOARCH=arm GOARM=5 go build -o rtmpDelayServer
+	GOOS=linux GOARCH=arm GOARM=5 go build -o rtmpScreenServer
 
 deploy: build
 	cp -v rtmpWebRTCRelay ansible/dist/

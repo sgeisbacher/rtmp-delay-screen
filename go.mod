@@ -7,8 +7,10 @@ require (
 	github.com/pion/webrtc/v3 v3.2.28
 	github.com/pkg/errors v0.9.1
 	github.com/yutopp/go-flv v0.3.1
-	github.com/yutopp/go-rtmp v0.0.0-20191212152852-4e41609a99bb
+	github.com/yutopp/go-rtmp v0.0.6
 )
+
+replace github.com/yutopp/go-rtmp => github.com/sgeisbacher/go-rtmp v0.0.0-20240218111249-a91d800efcbc
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
