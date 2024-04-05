@@ -11,15 +11,16 @@ import (
 	"github.com/pion/webrtc/v3"
 	"github.com/pion/webrtc/v3/pkg/media"
 	"github.com/pkg/errors"
+	"github.com/sgeisbacher/go-rtmp-screen/ringBuffer"
 	flvtag "github.com/yutopp/go-flv/tag"
 	"github.com/yutopp/go-rtmp"
 	rtmpmsg "github.com/yutopp/go-rtmp/message"
 )
 
-func startRTMPServer(peerConnection *webrtc.PeerConnection, videoTrack, audioTrack *webrtc.TrackLocalStaticSample) {
+func startRTMPServer(peerConnection *webrtc.PeerConnection, videoTrack, audioTrack *webrtc.TrackLocalStaticSample, ringBuffer *ringBuffer.RingBuffer) {
 	log.Println("Starting RTMP Server")
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp", "localhost:1935")
+	tcpAddr, err := net.ResolveTCPAddr("tcp", ":1935")
 	if err != nil {
 		log.Panicf("Failed: %+v", err)
 	}
@@ -36,6 +37,7 @@ func startRTMPServer(peerConnection *webrtc.PeerConnection, videoTrack, audioTra
 					peerConnection: peerConnection,
 					videoTrack:     videoTrack,
 					audioTrack:     audioTrack,
+					ringBuffer:     ringBuffer,
 				},
 
 				ControlState: rtmp.StreamControlStateConfig{
@@ -53,6 +55,7 @@ type Handler struct {
 	rtmp.DefaultHandler
 	peerConnection         *webrtc.PeerConnection
 	videoTrack, audioTrack *webrtc.TrackLocalStaticSample
+	ringBuffer             *ringBuffer.RingBuffer
 }
 
 func (h *Handler) OnServe(conn *rtmp.Conn) {
@@ -70,7 +73,7 @@ func (h *Handler) OnCreateStream(timestamp uint32, cmd *rtmpmsg.NetConnectionCre
 
 func (h *Handler) OnPublish(ctx *rtmp.StreamContext, timestamp uint32, cmd *rtmpmsg.NetStreamPublish) error {
 	log.Printf("OnPublish: %#v", cmd)
-	ringBuffer = createRingBuffer(30)
+	h.ringBuffer.Reset(-1)
 
 	if cmd.PublishingName == "" {
 		return errors.New("PublishingName is empty")
@@ -96,8 +99,6 @@ func (h *Handler) OnAudio(timestamp uint32, payload io.Reader) error {
 }
 
 const headerLengthField = 4
-
-var ringBuffer RingBuffer
 
 func (h *Handler) OnVideo(timestamp uint32, payload io.Reader) error {
 	var video flvtag.VideoData
@@ -125,8 +126,8 @@ func (h *Handler) OnVideo(timestamp uint32, payload io.Reader) error {
 		offset += int(bufferLength)
 	}
 
-	ringBuffer.Write(outBuf)
-	out, dataAvail := ringBuffer.Read()
+	h.ringBuffer.Write(outBuf)
+	out, dataAvail := h.ringBuffer.Read()
 	if !dataAvail {
 		return nil
 	}

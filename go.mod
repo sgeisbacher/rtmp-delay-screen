@@ -4,6 +4,7 @@ go 1.22.0
 
 require (
 	github.com/a-h/templ v0.2.598
+	github.com/bep/debounce v1.2.1
 	github.com/pion/webrtc/v3 v3.2.28
 	github.com/pkg/errors v0.9.1
 	github.com/yutopp/go-flv v0.3.1

@@ -1,20 +1,54 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/a-h/templ"
-	"github.com/pion/webrtc/v3"
+	"github.com/bep/debounce"
+	"github.com/sgeisbacher/go-rtmp-screen/ringBuffer"
 	"github.com/sgeisbacher/go-rtmp-screen/ui"
 )
 
+const MAX_BUF_SECS = 30
+const FRAME_RATE = 30
+
 func main() {
+	bufferCapDecouncer := debounce.New(1 * time.Second)
+	desiredCapacity := 5 * FRAME_RATE // 5 seconds
+	buffer := ringBuffer.CreateRingBuffer(desiredCapacity)
+
 	http.Handle("/", templ.Handler(ui.PlayerLayout()))
-	http.Handle("/admin", templ.Handler(ui.AdminLayout()))
-	http.HandleFunc("/createPeerConnection", createPeerConnection)
+	http.HandleFunc("/admin/", func(w http.ResponseWriter, r *http.Request) {
+		ui.AdminHomePage(desiredCapacity/FRAME_RATE, MAX_BUF_SECS).Render(r.Context(), w)
+	})
+	http.HandleFunc("POST /admin/rb/inc/{value}", func(w http.ResponseWriter, r *http.Request) {
+		increaseValue, err := strconv.Atoi(r.PathValue("value"))
+		if err != nil {
+			fmt.Printf("E: invalid increase value: %s", r.PathValue("value"))
+			w.WriteHeader(500)
+			return
+		}
+		desiredCapacity += increaseValue * FRAME_RATE
+		bufferCapDecouncer(func() { buffer.Reset(desiredCapacity) })
+
+		ui.RingBufferInfos(toSecs(desiredCapacity), toSecs(buffer.GetCapacity()), MAX_BUF_SECS).Render(r.Context(), w)
+	})
+	http.HandleFunc("GET /admin/bufferinfos", func(w http.ResponseWriter, r *http.Request) {
+		ui.RingBufferInfos(toSecs(desiredCapacity), toSecs(buffer.GetCapacity()), MAX_BUF_SECS).Render(r.Context(), w)
+	})
+	http.HandleFunc("GET /admin/framerate", func(w http.ResponseWriter, r *http.Request) {
+		_, frameRate := buffer.Stats()
+		ui.FrameRateInfos(frameRate).Render(r.Context(), w)
+	})
+	http.HandleFunc("GET /admin/datarate", func(w http.ResponseWriter, r *http.Request) {
+		dataRate, _ := buffer.Stats()
+		ui.DataRateInfos(dataRate/1024).Render(r.Context(), w)
+	})
+	http.HandleFunc("/createPeerConnection", buildCreatePeerConnectionHandleFunc(buffer))
 
 	fmt.Println("Listening on :8080")
 	err := http.ListenAndServe("localhost:8080", nil)
@@ -23,58 +57,6 @@ func main() {
 	}
 }
 
-// Add a single video track
-func createPeerConnection(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Incoming HTTP Request")
-
-	peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{})
-	if err != nil {
-		panic(err)
-	}
-
-	videoTrack, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH264}, "video", "pion")
-	if err != nil {
-		panic(err)
-	}
-	if _, err = peerConnection.AddTrack(videoTrack); err != nil {
-		panic(err)
-	}
-
-	audioTrack, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypePCMA}, "audio", "pion")
-	if err != nil {
-		panic(err)
-	}
-	if _, err = peerConnection.AddTrack(audioTrack); err != nil {
-		panic(err)
-	}
-
-	var offer webrtc.SessionDescription
-	if err := json.NewDecoder(r.Body).Decode(&offer); err != nil {
-		panic(err)
-	}
-
-	if err := peerConnection.SetRemoteDescription(offer); err != nil {
-		panic(err)
-	}
-
-	gatherComplete := webrtc.GatheringCompletePromise(peerConnection)
-	answer, err := peerConnection.CreateAnswer(nil)
-	if err != nil {
-		panic(err)
-	} else if err = peerConnection.SetLocalDescription(answer); err != nil {
-		panic(err)
-	}
-	<-gatherComplete
-
-	response, err := json.Marshal(peerConnection.LocalDescription())
-	if err != nil {
-		panic(err)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := w.Write(response); err != nil {
-		panic(err)
-	}
-
-	go startRTMPServer(peerConnection, videoTrack, audioTrack)
+func toSecs(n int) int {
+	return n / FRAME_RATE
 }
