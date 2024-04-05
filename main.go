@@ -37,14 +37,20 @@ func main() {
 
 		ui.RingBufferInfos(toSecs(desiredCapacity), toSecs(buffer.GetCapacity()), MAX_BUF_SECS).Render(r.Context(), w)
 	})
-	http.HandleFunc("GET /admin/bufferinfos", func(w http.ResponseWriter, r *http.Request) {
-		ui.RingBufferInfos(toSecs(desiredCapacity), toSecs(buffer.GetCapacity()), MAX_BUF_SECS).Render(r.Context(), w)
+	http.HandleFunc("GET /admin/infobox/buffer", func(w http.ResponseWriter, r *http.Request) {
+		desiredSecs := toSecs(desiredCapacity)
+		actualSecs := toSecs(buffer.GetCapacity())
+		ui.RingBufferInfos(desiredSecs, actualSecs, MAX_BUF_SECS).Render(r.Context(), w)
 	})
-	http.HandleFunc("GET /admin/framerate", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /admin/infobox/status", func(w http.ResponseWriter, r *http.Request) {
+		status := buffer.Status()
+		ui.StatusInfos(status).Render(r.Context(), w)
+	})
+	http.HandleFunc("GET /admin/infobox/framerate", func(w http.ResponseWriter, r *http.Request) {
 		_, frameRate := buffer.Stats()
 		ui.FrameRateInfos(frameRate).Render(r.Context(), w)
 	})
-	http.HandleFunc("GET /admin/datarate", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /admin/infobox/datarate", func(w http.ResponseWriter, r *http.Request) {
 		dataRate, _ := buffer.Stats()
 		ui.DataRateInfos(dataRate/1024).Render(r.Context(), w)
 	})

@@ -44,14 +44,32 @@ templ AdminHomePage(bufSecs int, maxBufSecs int) {
 	@AdminLayout() {
 		<div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
 			@RingBufferInfos(bufSecs, bufSecs, maxBufSecs)
+			@StatusInfos("idle")
 			@FrameRateInfos(29.79)
 			@DataRateInfos(266.8)
 		</div>
 	}
 }
 
+templ StatusInfos(status string) {
+	<div id="statusInfo" class="col" hx-get="/admin/infobox/status" hx-trigger="every 2s" hx-swap="outerHTML">
+		<div class="card mb-4 rounded-3 shadow-sm">
+			<div class="card-header py-3">
+				<h4 class="my-0 fw-normal">Status</h4>
+			</div>
+			<div class="card-body">
+				<h1 class="card-title pricing-card-title">{ status }</h1>
+				<ul class="list-unstyled mt-3 mb-4">
+					<li>the current status of the server: idle, buffering, streaming</li>
+				</ul>
+				<button type="button" class="btn btn-lg btn-primary" hx-target="#statusInfo" hx-get="/admin/infobox/status" hx-swap="outerHTML">Refresh</button>
+			</div>
+		</div>
+	</div>
+}
+
 templ RingBufferInfos(desiredBufSecs, bufSecs int, maxBufSecs int) {
-	<div id="rbInfo" class="col" hx-get="/admin/bufferinfos" hx-trigger="every 2s" hx-swap="outerHTML">
+	<div id="rbInfo" class="col" hx-get="/admin/infobox/buffer" hx-trigger="every 2s" hx-swap="outerHTML">
 		<div class="card mb-4 rounded-3 shadow-sm">
 			<div class="card-header py-3">
 				<h4 class="my-0 fw-normal">RingBuffer (capacity)</h4>
@@ -76,7 +94,7 @@ templ RingBufferInfos(desiredBufSecs, bufSecs int, maxBufSecs int) {
 }
 
 templ FrameRateInfos(frameRate float32) {
-	<div id="frInfo" class="col">
+	<div id="frInfo" class="col" hx-get="/admin/infobox/framerate" hx-trigger="every 2s" hx-swap="outerHTML">
 		<div class="card mb-4 rounded-3 shadow-sm">
 			<div class="card-header py-3">
 				<h4 class="my-0 fw-normal">Frame Rate (current)</h4>
@@ -86,14 +104,14 @@ templ FrameRateInfos(frameRate float32) {
 				<ul class="list-unstyled mt-3 mb-4">
 					<li>current framerate passing through server</li>
 				</ul>
-				<button type="button" class="btn btn-lg btn-primary" hx-target="#frInfo" hx-get="/admin/framerate" hx-trigger="every 2s" hx-swap="outerHTML">Refresh</button>
+				<button type="button" class="btn btn-lg btn-primary" hx-target="#frInfo" hx-get="/admin/infobox/framerate" hx-swap="outerHTML">Refresh</button>
 			</div>
 		</div>
 	</div>
 }
 
 templ DataRateInfos(dataRate float32) {
-	<div id="drInfo" class="col">
+	<div id="drInfo" class="col" hx-get="/admin/infobox/datarate" hx-trigger="every 2s" hx-swap="outerHTML">
 		<div class="card mb-4 rounded-3 shadow-sm">
 			<div class="card-header py-3">
 				<h4 class="my-0 fw-normal">Data Rate (current)</h4>
@@ -103,7 +121,7 @@ templ DataRateInfos(dataRate float32) {
 				<ul class="list-unstyled mt-3 mb-4">
 					<li>current data-rate passing through server</li>
 				</ul>
-				<button type="button" class="btn btn-lg btn-primary" hx-target="#drInfo" hx-get="/admin/datarate" hx-trigger="every 2s" hx-swap="outerHTML">Refresh</button>
+				<button type="button" class="btn btn-lg btn-primary" hx-target="#drInfo" hx-get="/admin/infobox/datarate" hx-swap="outerHTML">Refresh</button>
 			</div>
 		</div>
 	</div>

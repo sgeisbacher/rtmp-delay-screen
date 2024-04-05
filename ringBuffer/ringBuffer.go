@@ -51,6 +51,17 @@ func (r *RingBuffer) Read() ([]byte, bool) {
 	return r.buffer[readIdx], true
 }
 
+func (r *RingBuffer) Status() string {
+	switch true {
+	case r.rbWriteIdx == 0:
+		return "idle"
+	case r.rbWriteIdx < int64(r.capacity):
+		return "buffering"
+	default:
+		return "streaming"
+	}
+}
+
 func (r *RingBuffer) Reset(newCapacity int) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
