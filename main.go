@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -36,6 +37,25 @@ func main() {
 		bufferCapDecouncer(func() { buffer.Reset(desiredCapacity) })
 
 		ui.RingBufferInfos(toSecs(desiredCapacity), toSecs(buffer.GetCapacity()), MAX_BUF_SECS).Render(r.Context(), w)
+	})
+	http.HandleFunc("GET /streamer/status", func(w http.ResponseWriter, r *http.Request) {
+		statusMsg := ""
+		switch buffer.Status() {
+		case "streaming":
+			statusMsg = ""
+			break
+		case "buffering":
+			framesLeft, _ := buffer.BufferingFramesLeft()
+			secsLeft := framesLeft / FRAME_RATE
+			statusMsg = fmt.Sprintf("%s (%ds) ...", buffer.Status(), secsLeft)
+			break
+		case "disconnected":
+			statusMsg = "disconnected!<br>please (re)start streaming app on phone!"
+		default:
+			statusMsg = buffer.Status()
+		}
+
+		io.WriteString(w, statusMsg)
 	})
 	http.HandleFunc("GET /admin/infobox/buffer", func(w http.ResponseWriter, r *http.Request) {
 		desiredSecs := toSecs(desiredCapacity)

@@ -29,6 +29,12 @@ func (r *RingBuffer) GetCapacity() int {
 	return r.capacity
 }
 
+func (r *RingBuffer) BufferingFramesLeft() (framesLeft int, stillBuffering bool) {
+	framesLeft = r.capacity - int(r.rbWriteIdx)
+	stillBuffering = framesLeft > 0
+	return
+}
+
 func (r *RingBuffer) Write(data []byte) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -52,9 +58,12 @@ func (r *RingBuffer) Read() ([]byte, bool) {
 }
 
 func (r *RingBuffer) Status() string {
+	_, frameRate := r.Stats()
 	switch true {
 	case r.rbWriteIdx == 0:
 		return "idle"
+	case frameRate < 1:
+		return "disconnected"
 	case r.rbWriteIdx < int64(r.capacity):
 		return "buffering"
 	default:
@@ -78,6 +87,9 @@ func (r *RingBuffer) Reset(newCapacity int) {
 }
 
 func (r *RingBuffer) Stats() (dataRate float32, frameRate float32) {
+	if time.Since(r.lastMeasure).Seconds() > 2 {
+		return 0.0, 0.0
+	}
 	frameCount := 0
 	dataSum := 0
 	for _, frames := range r.byteCtr {

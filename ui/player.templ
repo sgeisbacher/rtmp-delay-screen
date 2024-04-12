@@ -1,45 +1,69 @@
 package ui
 
+css statusField() {
+	position: absolute;
+	font-size: 75px;
+	color: white;
+	top: 50%;
+	left: 40%;
+	text-align: center;
+}
+
+css videoContainerStyle() {
+	position: relative;
+}
+
+css videoTagStyle() {
+	width: 100%;
+	height: 100%;
+}
+
+//<--<video class={ videoTagStyle() } src="http://192.168.0.248:8000/S10E12.mp4" autoplay={ "true" } muted={ "true" } controls={ "true" }></video> -->
 templ PlayerLayout() {
 	<html>
+		<head>
+			<script src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
+		</head>
 		<body>
-			<h1>rtmp-delay</h1>
+			<h1 onclick="javascript:toggleFS()">rtmp-delay</h1>
 			<div id="rtmpFeed"></div>
+			<div id="video-container" class={ videoContainerStyle() }>
+				<span id="status" class={ statusField() } hx-get="/streamer/status" hx-trigger="every 1s" hx-swap="innerHTML">THIS IS THE STATUS</span>
+			</div>
 		</body>
 		<script>
-            var el;
-            let pc = new RTCPeerConnection();
-            pc.ontrack = function (event) {
-              el = document.createElement(event.track.kind);
-              el.srcObject = event.streams[0];
-              el.autoplay = true;
-              el.controls = true;
+           function toggleFS() { console.log('title-click'); document.getElementById("video-container").requestFullscreen() }
+           var el;
+           let pc = new RTCPeerConnection();
+           pc.ontrack = function (event) {
+             el = document.createElement(event.track.kind);
+             el.srcObject = event.streams[0];
+             el.autoplay = true;
+             el.controls = true;
+             el.style = 'width:100%;height:100%';
+             document.getElementById("video-container").appendChild(el);
+           };
 
-              document.getElementById("rtmpFeed").appendChild(el);
-            };
+           pc.addTransceiver("video");
 
-            pc.addTransceiver("video");
+           pc.createOffer().then((offer) => {
+             pc.setLocalDescription(offer);
+             return fetch(`/createPeerConnection`, {
+               method: "post",
+               headers: {
+                 Accept: "application/json, text/plain, */*",
+                 "Content-Type": "application/json",
+               },
+               body: JSON.stringify(offer),
+             });
+           })
+             .then((res) => res.json())
+             .then((res) => pc.setRemoteDescription(res))
+             .catch(alert);
 
-            pc.createOffer()
-              .then((offer) => {
-                pc.setLocalDescription(offer);
-                return fetch(`/createPeerConnection`, {
-                  method: "post",
-                  headers: {
-                    Accept: "application/json, text/plain, */*",
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify(offer),
-                });
-              })
-              .then((res) => res.json())
-              .then((res) => pc.setRemoteDescription(res))
-              .catch(alert);
-
-            setInterval(() => {
-              <!-- el.requestFullscreen(); -->
-              el.play();
-            }, 5000);
-          </script>
+           setInterval(() => {
+             el.play();
+           }, 5000);
+        </script>
 	</html>
 }
