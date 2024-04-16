@@ -3,7 +3,7 @@ setup:
 
 build:
 	templ generate
-	GOOS=linux GOARCH=arm GOARM=5 go build -o rtmpScreenServer
+	GOOS=linux GOARCH=arm GOARM=5 go build -o rtmpWebRTCRelay
 
 run:
 	npx nodemon -e go --signal SIGTERM --exec 'go' run .
