@@ -1,2 +1,2 @@
 [machines]
-192.168.8.132   ansible_user=stefan
+192.168.0.248   ansible_user=stefan
