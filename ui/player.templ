@@ -1,12 +1,24 @@
 package ui
 
-css statusField() {
+css statusOverlay() {
 	position: absolute;
 	font-size: 75px;
 	color: white;
 	top: 50%;
-	left: 40%;
+	text-shadow: black 0px 0px 10px;
+}
+
+css localIPOverlay() {
+	position: absolute;
+	font-size: 30px;
+	color: white;
+	bottom: 5%;
+	right: 5%;
 	text-align: center;
+}
+
+css localIPInfo() {
+	font-size: 30px;
 }
 
 css videoContainerStyle() {
@@ -24,11 +36,12 @@ templ PlayerLayout() {
 		<head>
 			<script src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
 		</head>
-		<body>
-			<h1 onclick="javascript:toggleFS()">rtmp-delay</h1>
-			<div id="rtmpFeed"></div>
+		<body style="background-color:black;">
+			<!--<h1 onclick="javascript:toggleFS()">rtmp-delay</h1> -->
+			<!-- <span id="localIP" class={ localIPInfo() } hx-get="/streamer/ip" hx-trigger="every 5s" hx-swap="innerHTML">local IP: n/a</span> -->
 			<div id="video-container" class={ videoContainerStyle() }>
-				<span id="status" class={ statusField() } hx-get="/streamer/status" hx-trigger="every 1s" hx-swap="innerHTML">THIS IS THE STATUS</span>
+				<span id="status-overlay" class={ statusOverlay() } hx-get="/streamer/status" hx-trigger="every 1s" hx-swap="innerHTML"></span>
+				<span id="local-ip-overlay" class={ localIPOverlay() } hx-get="/streamer/ip" hx-trigger="every 10s" hx-swap="innerHTML">Local IP: n/a</span>
 			</div>
 		</body>
 		<script>

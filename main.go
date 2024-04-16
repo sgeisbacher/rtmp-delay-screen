@@ -12,12 +12,14 @@ import (
 	"github.com/bep/debounce"
 	"github.com/sgeisbacher/go-rtmp-screen/ringBuffer"
 	"github.com/sgeisbacher/go-rtmp-screen/ui"
+	"github.com/sgeisbacher/go-rtmp-screen/utils"
 )
 
 const MAX_BUF_SECS = 30
 const FRAME_RATE = 30
 
 func main() {
+	fmt.Printf("local ip: %v\n", utils.GetOutboundIP())
 	bufferCapDecouncer := debounce.New(1 * time.Second)
 	desiredCapacity := 5 * FRAME_RATE // 5 seconds
 	buffer := ringBuffer.CreateRingBuffer(desiredCapacity)
@@ -50,12 +52,16 @@ func main() {
 			statusMsg = fmt.Sprintf("%s (%ds) ...", buffer.Status(), secsLeft)
 			break
 		case "disconnected":
-			statusMsg = "disconnected!<br>please (re)start streaming app on phone!"
+			statusMsg = "disconnected!<br><i style=\"font-size:30px;\">please (re)start streaming app on phone!</i>"
 		default:
 			statusMsg = buffer.Status()
 		}
 
 		io.WriteString(w, statusMsg)
+	})
+	http.HandleFunc("GET /streamer/ip", func(w http.ResponseWriter, r *http.Request) {
+		respStr := fmt.Sprintf("Local IP: %v", utils.GetOutboundIP())
+		io.WriteString(w, respStr)
 	})
 	http.HandleFunc("GET /admin/infobox/buffer", func(w http.ResponseWriter, r *http.Request) {
 		desiredSecs := toSecs(desiredCapacity)
