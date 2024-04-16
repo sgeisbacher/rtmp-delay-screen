@@ -65,6 +65,11 @@
         name: rtmpWebRTCRelay.service
         enabled: true
       become: true
+    - name: swap disabled
+      ansible.builtin.systemd_service:
+        name: dphys-swapfile.service
+        enabled: false
+      become: true
   handlers:
     - name: systemd-reloaded
       ansible.builtin.systemd_service:
