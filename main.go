@@ -43,6 +43,8 @@ func main() {
 	http.HandleFunc("GET /streamer/status", func(w http.ResponseWriter, r *http.Request) {
 		statusMsg := ""
 		switch buffer.Status() {
+		case "idle":
+			statusMsg = "idle<br/><i style=\"font-size:30px;\">please start streaming app on your phone!</i>"
 		case "streaming":
 			statusMsg = ""
 			break
@@ -83,7 +85,7 @@ func main() {
 	http.HandleFunc("/createPeerConnection", buildCreatePeerConnectionHandleFunc(buffer))
 
 	fmt.Println("Listening on :8080")
-	err := http.ListenAndServe("localhost:8080", nil)
+	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatalf("unknown error: %v\n", err)
 	}

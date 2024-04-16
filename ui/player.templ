@@ -4,6 +4,8 @@ css statusOverlay() {
 	position: absolute;
 	font-size: 75px;
 	color: white;
+	text-align: center;
+	width: 100%;
 	top: 50%;
 	text-shadow: black 0px 0px 10px;
 }
@@ -30,15 +32,12 @@ css videoTagStyle() {
 	height: 100%;
 }
 
-//<--<video class={ videoTagStyle() } src="http://192.168.0.248:8000/S10E12.mp4" autoplay={ "true" } muted={ "true" } controls={ "true" }></video> -->
 templ PlayerLayout() {
 	<html>
 		<head>
 			<script src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
 		</head>
 		<body style="background-color:black;">
-			<!--<h1 onclick="javascript:toggleFS()">rtmp-delay</h1> -->
-			<!-- <span id="localIP" class={ localIPInfo() } hx-get="/streamer/ip" hx-trigger="every 5s" hx-swap="innerHTML">local IP: n/a</span> -->
 			<div id="video-container" class={ videoContainerStyle() }>
 				<span id="status-overlay" class={ statusOverlay() } hx-get="/streamer/status" hx-trigger="every 1s" hx-swap="innerHTML"></span>
 				<span id="local-ip-overlay" class={ localIPOverlay() } hx-get="/streamer/ip" hx-trigger="every 10s" hx-swap="innerHTML">Local IP: n/a</span>
@@ -52,7 +51,7 @@ templ PlayerLayout() {
              el = document.createElement(event.track.kind);
              el.srcObject = event.streams[0];
              el.autoplay = true;
-             el.controls = true;
+             el.controls = false;
              el.style = 'width:100%;height:100%';
              document.getElementById("video-container").appendChild(el);
            };
@@ -74,9 +73,6 @@ templ PlayerLayout() {
              .then((res) => pc.setRemoteDescription(res))
              .catch(alert);
 
-           setInterval(() => {
-             el.play();
-           }, 5000);
         </script>
 	</html>
 }
