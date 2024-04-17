@@ -8,17 +8,17 @@ import (
 	"net"
 	"time"
 
-	"github.com/pion/webrtc/v3"
 	"github.com/pion/webrtc/v3/pkg/media"
 	"github.com/pkg/errors"
 	"github.com/sgeisbacher/go-rtmp-screen/ringBuffer"
+	webrtcutils "github.com/sgeisbacher/go-rtmp-screen/webrtc-utils"
 	flvtag "github.com/yutopp/go-flv/tag"
 	"github.com/yutopp/go-rtmp"
 	rtmpmsg "github.com/yutopp/go-rtmp/message"
 )
 
-func startRTMPServer(peerConnection *webrtc.PeerConnection, videoTrack, audioTrack *webrtc.TrackLocalStaticSample, ringBuffer *ringBuffer.RingBuffer) {
-	log.Println("Starting RTMP Server")
+func startRTMPServer(videoTrackProvider *webrtcutils.TrackProvider, ringBuffer *ringBuffer.RingBuffer) {
+	log.Println("Starting RTMP Server (tcp/1935)")
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", ":1935")
 	if err != nil {
@@ -34,10 +34,8 @@ func startRTMPServer(peerConnection *webrtc.PeerConnection, videoTrack, audioTra
 		OnConnect: func(conn net.Conn) (io.ReadWriteCloser, *rtmp.ConnConfig) {
 			return conn, &rtmp.ConnConfig{
 				Handler: &Handler{
-					peerConnection: peerConnection,
-					videoTrack:     videoTrack,
-					audioTrack:     audioTrack,
-					ringBuffer:     ringBuffer,
+					videoTrackProvider: videoTrackProvider,
+					ringBuffer:         ringBuffer,
 				},
 
 				ControlState: rtmp.StreamControlStateConfig{
@@ -53,9 +51,8 @@ func startRTMPServer(peerConnection *webrtc.PeerConnection, videoTrack, audioTra
 
 type Handler struct {
 	rtmp.DefaultHandler
-	peerConnection         *webrtc.PeerConnection
-	videoTrack, audioTrack *webrtc.TrackLocalStaticSample
-	ringBuffer             *ringBuffer.RingBuffer
+	videoTrackProvider *webrtcutils.TrackProvider
+	ringBuffer         *ringBuffer.RingBuffer
 }
 
 func (h *Handler) OnServe(conn *rtmp.Conn) {
@@ -82,20 +79,7 @@ func (h *Handler) OnPublish(ctx *rtmp.StreamContext, timestamp uint32, cmd *rtmp
 }
 
 func (h *Handler) OnAudio(timestamp uint32, payload io.Reader) error {
-	var audio flvtag.AudioData
-	if err := flvtag.DecodeAudioData(payload, &audio); err != nil {
-		return err
-	}
-
-	data := new(bytes.Buffer)
-	if _, err := io.Copy(data, audio.Data); err != nil {
-		return err
-	}
-
-	return h.audioTrack.WriteSample(media.Sample{
-		Data:     data.Bytes(),
-		Duration: 128 * time.Millisecond,
-	})
+	return nil
 }
 
 const headerLengthField = 4
@@ -131,10 +115,13 @@ func (h *Handler) OnVideo(timestamp uint32, payload io.Reader) error {
 	if !dataAvail {
 		return nil
 	}
-	return h.videoTrack.WriteSample(media.Sample{
-		Data:     out,
-		Duration: time.Second / 30,
-	})
+	if h.videoTrackProvider.Get() != nil {
+		return h.videoTrackProvider.Get().WriteSample(media.Sample{
+			Data:     out,
+			Duration: time.Second / 30,
+		})
+	}
+	return nil
 }
 
 func (h *Handler) OnClose() {

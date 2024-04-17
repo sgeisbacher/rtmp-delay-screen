@@ -2,17 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/pion/webrtc/v3"
-	"github.com/sgeisbacher/go-rtmp-screen/ringBuffer"
+	webrtcutils "github.com/sgeisbacher/go-rtmp-screen/webrtc-utils"
 )
 
 // Add a single video track
-func buildCreatePeerConnectionHandleFunc(ringBuffer *ringBuffer.RingBuffer) func(http.ResponseWriter, *http.Request) {
+func buildCreatePeerConnectionHandleFunc(videoTrackProvider *webrtcutils.TrackProvider) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Incoming HTTP Request")
 
 		peerConnection, err := webrtc.NewPeerConnection(webrtc.Configuration{})
 		if err != nil {
@@ -26,14 +24,7 @@ func buildCreatePeerConnectionHandleFunc(ringBuffer *ringBuffer.RingBuffer) func
 		if _, err = peerConnection.AddTrack(videoTrack); err != nil {
 			panic(err)
 		}
-
-		audioTrack, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypePCMA}, "audio", "pion")
-		if err != nil {
-			panic(err)
-		}
-		if _, err = peerConnection.AddTrack(audioTrack); err != nil {
-			panic(err)
-		}
+		videoTrackProvider.Set(videoTrack)
 
 		var offer webrtc.SessionDescription
 		if err := json.NewDecoder(r.Body).Decode(&offer); err != nil {
@@ -63,6 +54,5 @@ func buildCreatePeerConnectionHandleFunc(ringBuffer *ringBuffer.RingBuffer) func
 			panic(err)
 		}
 
-		go startRTMPServer(peerConnection, videoTrack, audioTrack, ringBuffer)
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/sgeisbacher/go-rtmp-screen/ringBuffer"
 	"github.com/sgeisbacher/go-rtmp-screen/ui"
 	"github.com/sgeisbacher/go-rtmp-screen/utils"
+	webrtcutils "github.com/sgeisbacher/go-rtmp-screen/webrtc-utils"
 )
 
 const MAX_BUF_SECS = 30
@@ -23,6 +24,7 @@ func main() {
 	bufferCapDecouncer := debounce.New(1 * time.Second)
 	desiredCapacity := 5 * FRAME_RATE // 5 seconds
 	buffer := ringBuffer.CreateRingBuffer(desiredCapacity)
+	videoTrackProvider := &webrtcutils.TrackProvider{}
 
 	http.Handle("/", templ.Handler(ui.PlayerLayout()))
 	http.HandleFunc("/admin/", func(w http.ResponseWriter, r *http.Request) {
@@ -41,25 +43,7 @@ func main() {
 		ui.RingBufferInfos(toSecs(desiredCapacity), toSecs(buffer.GetCapacity()), MAX_BUF_SECS).Render(r.Context(), w)
 	})
 	http.HandleFunc("GET /streamer/status", func(w http.ResponseWriter, r *http.Request) {
-		statusMsg := ""
-		switch buffer.Status() {
-		case "idle":
-			statusMsg = "idle<br/><i style=\"font-size:30px;\">please start streaming app on your phone!</i>"
-		case "streaming":
-			statusMsg = ""
-			break
-		case "buffering":
-			framesLeft, _ := buffer.BufferingFramesLeft()
-			secsLeft := framesLeft / FRAME_RATE
-			statusMsg = fmt.Sprintf("%s (%ds) ...", buffer.Status(), secsLeft)
-			break
-		case "disconnected":
-			statusMsg = "disconnected!<br><i style=\"font-size:30px;\">please (re)start streaming app on phone!</i>"
-		default:
-			statusMsg = buffer.Status()
-		}
-
-		io.WriteString(w, statusMsg)
+		io.WriteString(w, renderStatus(buffer))
 	})
 	http.HandleFunc("GET /streamer/ip", func(w http.ResponseWriter, r *http.Request) {
 		respStr := fmt.Sprintf("Local IP: %v", utils.GetOutboundIP())
@@ -82,12 +66,30 @@ func main() {
 		dataRate, _ := buffer.Stats()
 		ui.DataRateInfos(dataRate/1024).Render(r.Context(), w)
 	})
-	http.HandleFunc("/createPeerConnection", buildCreatePeerConnectionHandleFunc(buffer))
+	http.HandleFunc("/createPeerConnection", buildCreatePeerConnectionHandleFunc(videoTrackProvider))
 
+	go startRTMPServer(videoTrackProvider, buffer)
 	fmt.Println("Listening on :8080")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatalf("unknown error: %v\n", err)
+	}
+}
+
+func renderStatus(buffer *ringBuffer.RingBuffer) string {
+	switch buffer.Status() {
+	case "idle":
+		return "idle<br/><i style=\"font-size:30px;\">please start streaming app on your phone!</i>"
+	case "streaming":
+		return ""
+	case "buffering":
+		framesLeft, _ := buffer.BufferingFramesLeft()
+		secsLeft := framesLeft / FRAME_RATE
+		return fmt.Sprintf("%s (%ds) ...", buffer.Status(), secsLeft)
+	case "disconnected":
+		return "disconnected!<br><i style=\"font-size:30px;\">please (re)start streaming app on phone!</i>"
+	default:
+		return buffer.Status()
 	}
 }
 
