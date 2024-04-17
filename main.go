@@ -21,7 +21,7 @@ const FRAME_RATE = 30
 
 func main() {
 	fmt.Printf("local ip: %v\n", utils.GetOutboundIP())
-	bufferCapDecouncer := debounce.New(1 * time.Second)
+	bufferCapDebouncer := debounce.New(1 * time.Second)
 	desiredCapacity := 5 * FRAME_RATE // 5 seconds
 	buffer := ringBuffer.CreateRingBuffer(desiredCapacity)
 	videoTrackProvider := &webrtcutils.TrackProvider{}
@@ -38,15 +38,19 @@ func main() {
 			return
 		}
 		desiredCapacity += increaseValue * FRAME_RATE
-		bufferCapDecouncer(func() { buffer.Reset(desiredCapacity) })
+		bufferCapDebouncer(func() { buffer.Reset(desiredCapacity) })
 
 		ui.RingBufferInfos(toSecs(desiredCapacity), toSecs(buffer.GetCapacity()), MAX_BUF_SECS).Render(r.Context(), w)
 	})
 	http.HandleFunc("GET /streamer/status", func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, renderStatus(buffer))
 	})
+	http.HandleFunc("GET /streamer/delay", func(w http.ResponseWriter, r *http.Request) {
+		respStr := fmt.Sprintf("delay: %ds", toSecs(buffer.GetCapacity()))
+		io.WriteString(w, respStr)
+	})
 	http.HandleFunc("GET /streamer/ip", func(w http.ResponseWriter, r *http.Request) {
-		respStr := fmt.Sprintf("Local IP: %v", utils.GetOutboundIP())
+		respStr := fmt.Sprintf("stream-url: rtmp://%v/publish/fridge", utils.GetOutboundIP())
 		io.WriteString(w, respStr)
 	})
 	http.HandleFunc("GET /admin/infobox/buffer", func(w http.ResponseWriter, r *http.Request) {
