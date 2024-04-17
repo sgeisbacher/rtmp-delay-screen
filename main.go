@@ -42,14 +42,14 @@ func main() {
 
 		ui.RingBufferInfos(toSecs(desiredCapacity), toSecs(buffer.GetCapacity()), MAX_BUF_SECS).Render(r.Context(), w)
 	})
-	http.HandleFunc("GET /streamer/status", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /overlay/status", func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, renderStatus(buffer))
 	})
-	http.HandleFunc("GET /streamer/delay", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /overlay/delay", func(w http.ResponseWriter, r *http.Request) {
 		respStr := fmt.Sprintf("delay: %ds", toSecs(buffer.GetCapacity()))
 		io.WriteString(w, respStr)
 	})
-	http.HandleFunc("GET /streamer/ip", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /overlay/url", func(w http.ResponseWriter, r *http.Request) {
 		respStr := fmt.Sprintf("stream-url: rtmp://%v/publish/fridge", utils.GetOutboundIP())
 		io.WriteString(w, respStr)
 	})

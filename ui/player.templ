@@ -50,9 +50,9 @@ templ PlayerLayout() {
 		</head>
 		<body style="background-color:black;">
 			<div id="video-container" class={ videoContainerStyle() }>
-				<span id="status-overlay" class={ statusOverlay() } hx-get="/streamer/status" hx-trigger="every 1s" hx-swap="innerHTML"></span>
-				<span id="local-ip-overlay" class={ localIPOverlay() } hx-get="/streamer/ip" hx-trigger="every 10s" hx-swap="innerHTML">stream-url: n/a</span>
-				<span id="delay-secs-overlay" class={ delaySecsOverlay() } hx-get="/streamer/delay" hx-trigger="every 2s" hx-swap="innerHTML">delay: n/a</span>
+				<span id="status-overlay" class={ statusOverlay() } hx-get="/overlay/status" hx-trigger="every 1s" hx-swap="innerHTML"></span>
+				<span id="local-ip-overlay" class={ localIPOverlay() } hx-get="/overlay/url" hx-trigger="every 10s" hx-swap="innerHTML">stream-url: n/a</span>
+				<span id="delay-secs-overlay" class={ delaySecsOverlay() } hx-get="/overlay/delay" hx-trigger="every 2s" hx-swap="innerHTML">delay: n/a</span>
 			</div>
 		</body>
 		<script>
