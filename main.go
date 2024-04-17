@@ -42,6 +42,15 @@ func main() {
 
 		ui.RingBufferInfos(toSecs(desiredCapacity), toSecs(buffer.GetCapacity()), MAX_BUF_SECS).Render(r.Context(), w)
 	})
+	http.HandleFunc("GET /raw/status", func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, buffer.Status())
+	})
+	http.HandleFunc("GET /raw/ip", func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, utils.GetOutboundIP())
+	})
+	http.HandleFunc("GET /raw/delay", func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, fmt.Sprintf("%d", toSecs(buffer.GetCapacity())))
+	})
 	http.HandleFunc("GET /overlay/status", func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, renderStatus(buffer))
 	})

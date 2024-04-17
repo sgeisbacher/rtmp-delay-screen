@@ -84,6 +84,29 @@ templ PlayerLayout() {
              .then((res) => pc.setRemoteDescription(res))
              .catch(alert);
 
+           let lastPlayTime;
+           async function watchDog() {
+             console.log('watchdog check ...');
+             const currentPlayTime = Math.floor(el.currentTime)
+             if (!lastPlayTime) {
+                 lastPlayTime = currentPlayTime
+                 return
+             }
+
+             const resp = await fetch('/raw/status');
+             const status = await resp.text();
+
+             //console.log('time:', currentPlayTime, 'status:', status)
+
+             if (status === 'streaming' && lastPlayTime === currentPlayTime) {
+               console.log('lost video-track, reloading page ...')
+               window.location.reload()
+             }
+             lastPlayTime = currentPlayTime
+           }
+
+           setInterval(watchDog, 8_000)
+
         </script>
 	</html>
 }
