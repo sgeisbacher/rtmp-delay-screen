@@ -22,7 +22,7 @@ const FRAME_RATE = 30
 func main() {
 	fmt.Printf("local ip: %v\n", utils.GetOutboundIP())
 	bufferCapDebouncer := debounce.New(1 * time.Second)
-	desiredCapacity := 5 * FRAME_RATE // 5 seconds
+	desiredCapacity := 10 * FRAME_RATE // 10 seconds
 	buffer := ringBuffer.CreateRingBuffer(desiredCapacity)
 	videoTrackProvider := &webrtcutils.TrackProvider{}
 
