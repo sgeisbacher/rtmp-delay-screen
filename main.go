@@ -20,25 +20,34 @@ const MAX_BUF_SECS = 30
 const FRAME_RATE = 30
 
 func main() {
-	fmt.Printf("local ip: %v\n", utils.GetOutboundIP())
 	bufferCapDebouncer := debounce.New(1 * time.Second)
-	desiredCapacity := 10 * FRAME_RATE // 10 seconds
+	initialdelaySecs := loadDelaySecs()
+	desiredCapacity := initialdelaySecs * FRAME_RATE
 	buffer := ringBuffer.CreateRingBuffer(desiredCapacity)
 	videoTrackProvider := &webrtcutils.TrackProvider{}
+
+	fmt.Printf("initial delaySecs: %d\n", initialdelaySecs)
+	fmt.Printf("local ip: %s\n", utils.GetOutboundIP())
 
 	http.Handle("/", templ.Handler(ui.PlayerLayout()))
 	http.HandleFunc("/admin/", func(w http.ResponseWriter, r *http.Request) {
 		ui.AdminHomePage(desiredCapacity/FRAME_RATE, MAX_BUF_SECS).Render(r.Context(), w)
 	})
 	http.HandleFunc("POST /admin/rb/inc/{value}", func(w http.ResponseWriter, r *http.Request) {
-		increaseValue, err := strconv.Atoi(r.PathValue("value"))
+		increaseSecs, err := strconv.Atoi(r.PathValue("value"))
 		if err != nil {
 			fmt.Printf("E: invalid increase value: %s", r.PathValue("value"))
 			w.WriteHeader(500)
 			return
 		}
-		desiredCapacity += increaseValue * FRAME_RATE
-		bufferCapDebouncer(func() { buffer.Reset(desiredCapacity) })
+		newCap := desiredCapacity + increaseSecs*FRAME_RATE
+		if toSecs(newCap) > 0 && toSecs(newCap) <= MAX_BUF_SECS {
+			desiredCapacity = newCap
+			bufferCapDebouncer(func() {
+				persistDelaySecs(toSecs(newCap))
+				buffer.Reset(desiredCapacity)
+			})
+		}
 
 		ui.RingBufferInfos(toSecs(desiredCapacity), toSecs(buffer.GetCapacity()), MAX_BUF_SECS).Render(r.Context(), w)
 	})
