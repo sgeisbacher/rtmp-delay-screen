@@ -1,10 +1,11 @@
-# RTMP Delay Server
+# RTMP Delay Screen
 
 ## idea
 
 olympic weightlifters need to constantly review and analyse their lifting attempts while training. but a live stream to the gym'server
 TV isnt helpful, cause while performing they need to focus on the execution of the lift. so `rtmp-delay-screen` records the stream
 and replays it on a certain, configurable, delay.
+
 ![illustration](media/illustration.png)
 
 ## how it works
